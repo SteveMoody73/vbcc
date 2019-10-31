@@ -7,10 +7,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#ifdef __CYGWIN__
-#include <windows.h>
-#endif
-
 #ifdef AMIGA
 #pragma amiga-align
 #ifdef __amigaos4__
@@ -269,27 +265,6 @@ static int read_config(const char *cfg_name)
         free(name);
       }
     }
-
-#if defined(__CYGWIN__) || defined (__linux__)
-    if (!file) {
-		char buf[1040], *p;
-#ifdef __CYGWIN__
-		GetModuleFileNameA(0, buf, 1023);
-#else
-		readlink( "/proc/self/exe", buf, 1023);
-#endif
-		for (p = buf + strlen(buf); p > buf;) {
-			--p;
-			if (*p == '/' || *p == '\\') {
-				*++p = 0;
-				break;
-			}
-		}
-		strcat(buf, cfg_name);
-		file=fopen(buf, "r");
-    }
-#endif
-
     if(!file) {puts("No config file!");raus(EXIT_FAILURE);}
     if(fseek(file,0,SEEK_END)) return 0;
     size=ftell(file);
@@ -562,6 +537,7 @@ int main(int argc,char *argv[])
 #ifdef AMIGA
         if(pm&&parm!=cmfiles)
             if(MatchFirst((STRPTR)convert_path(parm),ap)){
+                MatchEnd(ap);
                 printf("No match for %s\n",parm);
                 rc=RETURN_WARN;
                 continue;
@@ -706,6 +682,7 @@ int main(int argc,char *argv[])
 #endif
                     if(SystemTags(command,NP_Priority,-2,TAG_DONE)){
                         printf("%s failed\n",command);
+                        if(pm) MatchEnd(ap);
                         raus(EXIT_FAILURE);
                     }
                 }else
